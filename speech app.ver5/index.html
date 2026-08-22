@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>語言復健 - 圖片命名訓練 (自動壓縮版)</title>
+
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#4CAF50">
+
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: #f4f6f9;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 15px;
+            box-sizing: border-box;
+        }
+        .card {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            padding: 20px;
+            text-align: center;
+            max-width: 450px;
+            width: 100%;
+        }
+        .filter-container {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            justify-content: center;
+        }
+        select {
+            padding: 8px 12px;
+            font-size: 15px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            background-color: #fff;
+            outline: none;
+        }
+        .image-container {
+            width: 200px;
+            height: 200px;
+            margin: 0 auto 10px;
+            border-radius: 15px;
+            background-color: #eee;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 80px;
+            object-fit: cover;
+            border: 2px solid #e0e0e0;
+        }
+        .hint-box {
+            min-height: 45px;
+            margin: 10px 0;
+            padding: 10px;
+            background-color: #eef7ff;
+            border-radius: 10px;
+            color: #0056b3;
+            font-size: 17px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .heard-box {
+            font-size: 15px;
+            color: #d32f2f;
+            background-color: #ffebee;
+            padding: 8px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            min-height: 24px;
+            word-break: break-all;
+        }
+        .btn-group {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 8px;
+        }
+        button {
+            border: none;
+            padding: 12px 20px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .btn-primary { background-color: #4CAF50; color: white; width: 100%; font-size: 18px; padding: 14px; }
+        .btn-hint { background-color: #2196F3; color: white; }
+        .btn-manual { background-color: #9C27B0; color: white; }
+        .btn-next { background-color: #ff9800; color: white; }
+        .btn-add { background-color: #795548; color: white; margin-top: 10px; font-size: 14px; padding: 8px 16px; }
+        .btn-clear { background-color: #e91e63; color: white; margin-top: 10px; font-size: 12px; padding: 5px 10px; border-radius: 8px; }
+        
+        button.mic-active {
+            background-color: #f44336;
+            animation: pulse 1.2s infinite;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.03); }
+            100% { transform: scale(1); }
+        }
+        .status {
+            margin-top: 12px;
+            font-size: 13px;
+            color: #666;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+        .modal-content {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            width: 85%;
+            max-width: 350px;
+            text-align: left;
+        }
+        .modal-content input {
+            width: 100%;
+            padding: 8px;
+            margin: 6px 0 12px;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <div class="filter-container">
+        <select id="categorySelect" onchange="filterQuestions()">
+            <option value="all">所有類別</option>
+            <option value="custom">📷 自訂照片</option>
+            <option value="food">飲食水果</option>
+            <option value="daily">生活用品</option>
+            <option value="transport">交通工具</option>
+        </select>
+        <select id="difficultySelect" onchange="filterQuestions()">
+            <option value="all">所有難度</option>
+            <option value="1">簡單</option>
+            <option value="2">中等</option>
+        </select>
+    </div>
+
+    <h2 style="margin: 5px 0 10px; font-size: 20px;">呢個係咩嚟？請講出嚟</h2>
+    
+    <div id="imageDisplayArea">
+        <img id="displayImage" class="image-container" src="" alt="訓練圖片" style="display:none;">
+        <div id="displayEmoji" class="image-container">🪥</div>
+    </div>
+
+    <div class="hint-box" id="hintBox">按「開始講嘢」講出名稱</div>
+    <div class="heard-box" id="heardBox">聽到的聲音會顯示喺度...</div>
+    
+    <button class="btn-primary" id="micBtn" onclick="toggleListening()">🎤 開始講嘢</button>
+    
+    <div class="btn-group" style="margin-top: 10px;">
+        <button class="btn-hint" onclick="giveManualHint()">💡 提示</button>
+        <button class="btn-manual" onclick="manualPass()">👍 講得啱</button>
+        <button class="btn-next" onclick="nextQuestion()">➡️ 下一題</button>
+    </div>
+
+    <button class="btn-add" onclick="openAddModal()">➕ 家屬新增題目/上傳照片</button>
+    <br>
+    <button class="btn-clear" onclick="clearCustomQuestions()">🗑️ 清除所有自訂題目</button>
+
+    <div class="status" id="statusText">狀態：準備就緒 (廣東話模式)</div>
+</div>
+
+<div class="modal" id="addModal">
+    <div class="modal-content">
+        <h3 style="margin-top:0;">新增自訂題目</h3>
+        <label>1. 選擇照片（可拍照或從相簿選擇）：</label>
+        <input type="file" id="customImageInput" accept="image/*">
+        
+        <label>2. 正確名稱（如：大咀鳥杯）：</label>
+        <input type="text" id="customNameInput" placeholder="例如：水杯">
+        
+        <label>3. 語意提示（可不填）：</label>
+        <input type="text" id="customSemanticInput" placeholder="例如：平時用嚟喝水嘅杯">
+        
+        <div style="display: flex; gap: 10px; margin-top: 10px;">
+            <button style="background-color: #4CAF50; color: white; flex: 1;" onclick="saveCustomQuestion()">儲存</button>
+            <button style="background-color: #9e9e9e; color: white; flex: 1;" onclick="closeAddModal()">取消</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    var defaultQuestions = [
+        { name: "蘋果", category: "food", level: 1, keywords: ["蘋果", "屏果", "平果", "苹果", "個蘋果"], emoji: "🍎", semantic: "一種紅色嘅水果，甜甜地嘅", phonemic: "第一個字係『ping4』（平）..." },
+        { name: "香蕉", category: "food", level: 1, keywords: ["香蕉", "鄉蕉", "隻香蕉"], emoji: "🍌", semantic: "黃色長條形嘅水果，剝皮食嘅", phonemic: "第一個字係『hoeng1』（香）..." },
+        { name: "牙刷", category: "daily", level: 1, keywords: ["牙刷", "芽刷", "雅刷", "一支牙刷"], emoji: "🪥", semantic: "每日屋企刷牙用嘅工具", phonemic: "第一個字係『ngaa4』（牙）..." },
+        { name: "眼鏡", category: "daily", level: 1, keywords: ["眼鏡", "眼精", "一副眼鏡", "戴眼鏡"], emoji: "👓", semantic: "戴喺眼睛睇嘢清楚啲嘅嘢", phonemic: "第一個字係『ngaan5』（眼）..." },
+        { name: "巴士", category: "transport", level: 1, keywords: ["巴士", "雙層巴士", "搭巴士"], emoji: "🚌", semantic: "馬路上載好多乘客嘅大型公共交通工具", phonemic: "第一個字係『baa1』（巴）..." }
+    ];
+
+    var rawQuestions = [];
+    var activeQuestions = [];
+    var currentIndex = 0;
+    var recognition = null;
+    var isListening = false;
+    var hintLevel = 0;
+    var hasAnswered = false;
+
+    var SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+    function loadSavedQuestions() {
+        var saved = localStorage.getItem('cantonese_rehab_custom_q');
+        var customList = saved ? JSON.parse(saved) : [];
+        rawQuestions = customList.concat(defaultQuestions);
+    }
+
+    function filterQuestions() {
+        var cat = document.getElementById('categorySelect').value;
+        var diff = document.getElementById('difficultySelect').value;
+
+        activeQuestions = rawQuestions.filter(function(q) {
+            var matchCat = (cat === 'all' || q.category === cat);
+            var matchDiff = (diff === 'all' || q.level.toString() === diff);
+            return matchCat && matchDiff;
+        });
+
+        if (activeQuestions.length === 0) {
+            activeQuestions = rawQuestions;
+        }
+        currentIndex = 0;
+        loadQuestion();
+    }
+
+    function loadQuestion() {
+        if (activeQuestions.length === 0) return;
+        var current = activeQuestions[currentIndex];
+
+        var imgEl = document.getElementById('displayImage');
+        var emojiEl = document.getElementById('displayEmoji');
+
+        if (current.image) {
+            imgEl.src = current.image;
+            imgEl.style.display = 'block';
+            emojiEl.style.display = 'none';
+        } else {
+            emojiEl.innerText = current.emoji || "❓";
+            emojiEl.style.display = 'flex';
+            imgEl.style.display = 'none';
+        }
+
+        document.getElementById('hintBox').innerText = "按「開始講嘢」講出名稱";
+        document.getElementById('heardBox').innerText = "聽到的聲音會顯示喺度...";
+        document.getElementById('statusText').innerText = "狀態：準備就緒 (廣東話模式)";
+        hintLevel = 0;
+        hasAnswered = false;
+    }
+
+    function openAddModal() { document.getElementById('addModal').style.display = 'flex'; }
+    function closeAddModal() { document.getElementById('addModal').style.display = 'none'; }
+
+    // 核心優化：JavaScript 背景自動圖片壓縮函式 (縮放至 400x400 max，品質 0.7)
+    function compressImage(file, callback) {
+        var reader = new FileReader();
+        reader.onload = function(e) {
+            var img = new Image();
+            img.onload = function() {
+                var canvas = document.createElement('canvas');
+                var max_size = 400; // 適合手機螢幕顯示的尺寸
+                var width = img.width;
+                var height = img.height;
+
+                if (width > height) {
+                    if (width > max_size) {
+                        height *= max_size / width;
+                        width = max_size;
+                    }
+                } else {
+                    if (height > max_size) {
+                        width *= max_size / height;
+                        height = max_size;
+                    }
+                }
+
+                canvas.width = width;
+                canvas.height = height;
+                var ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+
+                // 將圖片轉為 JPEG 並壓縮品質至 70%，大大節省容量
+                var compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7);
+                callback(compressedDataUrl);
+            };
+            img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+    }
+
+    // 保存自訂題目（整合壓縮機制）
+    function saveCustomQuestion() {
+        var fileInput = document.getElementById('customImageInput');
+        var nameInput = document.getElementById('customNameInput').value.trim();
+        var semanticInput = document.getElementById('customSemanticInput').value.trim();
+
+        if (!fileInput.files || !fileInput.files[0]) {
+            alert("請選擇照片或即時拍攝照片！");
+            return;
+        }
+        if (!nameInput) {
+            alert("請輸入名稱！");
+            return;
+        }
+
+        // 呼叫自動壓縮
+        compressImage(fileInput.files[0], function(compressedBase64) {
+            var newQuestion = {
+                name: nameInput,
+                category: "custom",
+                level: 1,
+                keywords: [nameInput],
+                image: compressedBase64, // 存入壓縮後的超小 Base64
+                semantic: semanticInput || ("呢個係" + nameInput),
+                phonemic: "第一個字係『" + nameInput.charAt(0) + "』..."
+            };
+
+            var saved = localStorage.getItem('cantonese_rehab_custom_q');
+            var customList = saved ? JSON.parse(saved) : [];
+            customList.unshift(newQuestion);
+            
+            try {
+                localStorage.setItem('cantonese_rehab_custom_q', JSON.stringify(customList));
+            } catch (err) {
+                alert("儲存空間已滿，請刪除部分舊相片再試。");
+                return;
+            }
+
+            loadSavedQuestions();
+            document.getElementById('categorySelect').value = 'custom';
+            filterQuestions();
+            closeAddModal();
+
+            document.getElementById('customNameInput').value = '';
+            document.getElementById('customSemanticInput').value = '';
+            fileInput.value = '';
+        });
+    }
+
+    function clearCustomQuestions() {
+        if (confirm("確定要刪除所有上傳過的照片題目嗎？")) {
+            localStorage.removeItem('cantonese_rehab_custom_q');
+            loadSavedQuestions();
+            document.getElementById('categorySelect').value = 'all';
+            filterQuestions();
+        }
+    }
+
+    function initSpeechRecognition() {
+        if (!SpeechRecognition) {
+            document.getElementById('statusText').innerText = "⚠️ 瀏覽器不支援語音辨識（建議使用 Chrome/Safari）";
+            return;
+        }
+
+        recognition = new SpeechRecognition();
+        recognition.lang = 'zh-HK';
+        recognition.continuous = false;
+        recognition.interimResults = true;
+
+        recognition.onstart = function() {
+            isListening = true;
+            hasAnswered = false;
+            document.getElementById('micBtn').classList.add('mic-active');
+            document.getElementById('micBtn').innerText = "🎙️ 聽緊你講嘢...";
+            document.getElementById('statusText').innerText = "請講出圖中物品嘅廣東話名稱";
+            document.getElementById('heardBox').innerText = "聽緊...";
+        };
+
+        recognition.onresult = function(event) {
+            var transcript = '';
+            for (var i = event.resultIndex; i < event.results.length; i++) {
+                transcript += event.results[i][0].transcript;
+            }
+            
+            var cleanText = transcript.replace(/[.,!?。，！？\s]/g, '');
+            document.getElementById('heardBox').innerText = "聽到的內容：「" + cleanText + "」";
+
+            if (!hasAnswered && cleanText.length > 0) {
+                checkAnswer(cleanText);
+            }
+        };
+
+        recognition.onerror = function(event) {
+            if (event.error !== 'no-speech') {
+                document.getElementById('statusText').innerText = "收音不清晰，家屬可按「講得啱」過關";
+            }
+            stopListeningState();
+        };
+
+        recognition.onend = function() { stopListeningState(); };
+    }
+
+    function stopListeningState() {
+        isListening = false;
+        var btn = document.getElementById('micBtn');
+        if (btn) {
+            btn.classList.remove('mic-active');
+            btn.innerText = "🎤 開始講嘢";
+        }
+    }
+
+    function toggleListening() {
+        if (!recognition) {
+            alert("請使用 Chrome 或 Safari 瀏覽器開啟此網頁。");
+            return;
+        }
+
+        if (isListening) {
+            try { recognition.stop(); } catch(e) {}
+        } else {
+            try {
+                recognition.lang = 'zh-HK';
+                recognition.start();
+            } catch (e) {
+                try {
+                    recognition.stop();
+                    setTimeout(function() {
+                        recognition.lang = 'zh-HK';
+                        recognition.start();
+                    }, 200);
+                } catch(err) {}
+            }
+        }
+    }
+
+    function checkAnswer(userInput) {
+        if (!userInput) return;
+        var current = activeQuestions[currentIndex];
+
+        var isCorrect = current.keywords.some(function(key) {
+            return userInput.indexOf(key) !== -1;
+        });
+
+        if (isCorrect) {
+            handleSuccess("🎉 答對咗！好棒！");
+        }
+    }
+
+    function manualPass() { handleSuccess("👍 家屬確認答對！太棒了！"); }
+
+    function handleSuccess(msg) {
+        if (hasAnswered) return;
+        hasAnswered = true;
+        try { recognition.stop(); } catch(e) {}
+
+        var current = activeQuestions[currentIndex];
+        document.getElementById('hintBox').innerText = msg;
+        speakCantonese("答對咗，呢個係" + current.name);
+        
+        setTimeout(function() { nextQuestion(); }, 2200);
+    }
+
+    function giveManualHint() {
+        if (activeQuestions.length === 0) return;
+        var current = activeQuestions[currentIndex];
+        hintLevel++;
+        if (hintLevel === 1) {
+            document.getElementById('hintBox').innerText = "提示：" + current.semantic;
+            speakCantonese(current.semantic);
+        } else if (hintLevel === 2) {
+            document.getElementById('hintBox').innerText = "發音提示：" + current.phonemic;
+            speakCantonese(current.phonemic);
+        } else {
+            document.getElementById('hintBox').innerText = "答案係：" + current.name;
+            speakCantonese("呢個就係" + current.name);
+        }
+    }
+
+    function nextQuestion() {
+        if (activeQuestions.length === 0) return;
+        currentIndex = (currentIndex + 1) % activeQuestions.length;
+        loadQuestion();
+    }
+
+    function speakCantonese(text) {
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.cancel();
+            var utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'zh-HK';
+            utterance.rate = 0.85;
+            window.speechSynthesis.speak(utterance);
+        }
+    }
+
+    window.onload = function() {
+        loadSavedQuestions();
+        filterQuestions();
+        initSpeechRecognition();
+    };
+</script>
+
+</body>
+</html>
