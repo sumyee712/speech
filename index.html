@@ -270,39 +270,32 @@
     }
 
     function loadQuestion() {
-    var q = currentQuestions[currentQuestionIndex]; // 取得當前題目
+    if (activeQuestions.length === 0) return;
+
+    // 1. 使用正確的變數名稱
+    var q = activeQuestions[currentIndex];
     
     var imgEl = document.getElementById("displayImage");
     var emojiEl = document.getElementById("displayEmoji");
 
-    // 優先判斷是否有圖片（image 屬性）
+    // 2. 判斷顯示圖片或 Emoji
     if (q.image && q.image !== "") {
         imgEl.src = q.image;
-        imgEl.style.display = "block";  // 顯示圖片
-        emojiEl.style.display = "none"; // 隱藏 Emoji
+        imgEl.style.display = "block";   // 顯示圖片
+        emojiEl.style.display = "none";  // 隱藏 Emoji
     } else {
         emojiEl.innerText = q.emoji || "❓";
         emojiEl.style.display = "block"; // 顯示 Emoji
         imgEl.style.display = "none";    // 隱藏圖片
     }
 
-    // 填寫提示與答案文字
-    document.getElementById("semanticHintText").innerText = q.semantic;
-    document.getElementById("phonemicHintText").innerText = q.phonemic;
-    document.getElementById("answerText").innerText = q.name;
-
-    // 預設隱藏提示框
-    document.getElementById("semanticBox").style.display = "none";
-    document.getElementById("phonemicBox").style.display = "none";
-    document.getElementById("answerBox").style.display = "none";
+    // 3. 重置提示與狀態文字
+    document.getElementById('hintBox').innerText = "按「開始講嘢」講出名稱";
+    document.getElementById('heardBox').innerText = "聽到的聲音會顯示喺度...";
+    document.getElementById('statusText').innerText = "狀態：準備就緒 (廣東話模式)";
+    hintLevel = 0;
+    hasAnswered = false;
 }
-    
-        document.getElementById('hintBox').innerText = "按「開始講嘢」講出名稱";
-        document.getElementById('heardBox').innerText = "聽到的聲音會顯示喺度...";
-        document.getElementById('statusText').innerText = "狀態：準備就緒 (廣東話模式)";
-        hintLevel = 0;
-        hasAnswered = false;
-    }
 
     function openAddModal() { document.getElementById('addModal').style.display = 'flex'; }
     function closeAddModal() { document.getElementById('addModal').style.display = 'none'; }
