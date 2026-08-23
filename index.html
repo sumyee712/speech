@@ -166,10 +166,12 @@
 
     <h2 style="margin: 5px 0 10px; font-size: 20px;">呢個係咩嚟？請講出嚟</h2>
     
-    <div id="imageDisplayArea">
-        <img id="displayImage" class="image-container" src="" alt="訓練圖片" style="display:none;">
-        <div id="displayEmoji" class="image-container">🪥</div>
-    </div>
+    <div id="imageDisplayArea" style="width: 100%; min-height: 200px; display: flex; align-items: center; justify-content: center; margin: 15px 0;">
+    <!-- 照片 -->
+    <img id="displayImage" class="image-container" src="" alt="訓練圖片" style="max-width: 100%; max-height: 220px; object-fit: contain; border-radius: 12px; display: none;">
+    <!-- Emoji 備用 -->
+    <div id="displayEmoji" class="image-container" style="font-size: 90px; display: none;"></div>
+</div>
 
     <div class="hint-box" id="hintBox">按「開始講嘢」講出名稱</div>
     <div class="heard-box" id="heardBox">聽到的聲音會顯示喺度...</div>
