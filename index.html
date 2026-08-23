@@ -270,22 +270,33 @@
     }
 
     function loadQuestion() {
-        if (activeQuestions.length === 0) return;
-        var current = activeQuestions[currentIndex];
+    var q = currentQuestions[currentQuestionIndex]; // 取得當前題目
+    
+    var imgEl = document.getElementById("displayImage");
+    var emojiEl = document.getElementById("displayEmoji");
 
-        var imgEl = document.getElementById('displayImage');
-        var emojiEl = document.getElementById('displayEmoji');
+    // 優先判斷是否有圖片（image 屬性）
+    if (q.image && q.image !== "") {
+        imgEl.src = q.image;
+        imgEl.style.display = "block";  // 顯示圖片
+        emojiEl.style.display = "none"; // 隱藏 Emoji
+    } else {
+        emojiEl.innerText = q.emoji || "❓";
+        emojiEl.style.display = "block"; // 顯示 Emoji
+        imgEl.style.display = "none";    // 隱藏圖片
+    }
 
-        if (current.image) {
-            imgEl.src = current.image;
-            imgEl.style.display = 'block';
-            emojiEl.style.display = 'none';
-        } else {
-            emojiEl.innerText = current.emoji || "❓";
-            emojiEl.style.display = 'flex';
-            imgEl.style.display = 'none';
-        }
+    // 填寫提示與答案文字
+    document.getElementById("semanticHintText").innerText = q.semantic;
+    document.getElementById("phonemicHintText").innerText = q.phonemic;
+    document.getElementById("answerText").innerText = q.name;
 
+    // 預設隱藏提示框
+    document.getElementById("semanticBox").style.display = "none";
+    document.getElementById("phonemicBox").style.display = "none";
+    document.getElementById("answerBox").style.display = "none";
+}
+    
         document.getElementById('hintBox').innerText = "按「開始講嘢」講出名稱";
         document.getElementById('heardBox').innerText = "聽到的聲音會顯示喺度...";
         document.getElementById('statusText').innerText = "狀態：準備就緒 (廣東話模式)";
